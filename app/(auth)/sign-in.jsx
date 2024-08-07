@@ -1,37 +1,56 @@
 import { useState } from "react";
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
+import { View, Text, ScrollView, Dimensions, Alert } from "react-native";
 
-import { images } from "../../constants";
 import { CustomButton, FormField } from "../../components";
-import { getCurrentUser, signIn } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const SignIn = () => {
   const { setUser, setIsLogged } = useGlobalContext();
   const [isSubmitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
   const submit = async () => {
-    if (form.email === "" || form.password === "") {
+    if (form.username === "" || form.password === "") {
       Alert.alert("Error", "Please fill in all fields");
+      return;
     }
 
     setSubmitting(true);
 
-    try {
-      await signIn(form.email, form.password);
-      const result = await getCurrentUser();
-      setUser(result);
-      setIsLogged(true);
+    const loginData = {
+      username: form.username,
+      password: form.password
+    };
 
-      Alert.alert("Success", "User signed in successfully");
-      router.replace("/home");
+    try {
+      // Using fetch for POST request
+      const response = await fetch('http://63.142.252.251/sparking/web/index.php/api/v1/accounts/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(loginData)
+      });
+
+      const result = await response.json(); // Correctly parse JSON response
+      if (result.success) {
+        // Store token
+        await AsyncStorage.setItem('authToken', result.token);
+
+        // setUser(result); // Uncomment and handle user data as needed
+        // setIsLogged(true); // Uncomment and handle login state as needed
+        Alert.alert("Success", "User signed in successfully");
+        router.replace("/home");
+      } else {
+        Alert.alert("Error", result.message);
+      }
     } catch (error) {
+      console.error("Error details:", error.message);
       Alert.alert("Error", error.message);
     } finally {
       setSubmitting(false);
@@ -47,20 +66,14 @@ const SignIn = () => {
             minHeight: Dimensions.get("window").height - 100,
           }}
         >
-          <Image
-            source={images.logo}
-            resizeMode="contain"
-            className="w-[115px] h-[34px]"
-          />
-
-          <Text className="text-2xl font-semibold text-white mt-10 font-psemibold">
-            Log in to Aora
+          <Text className="text-2xl text-center font-semibold text-white mt-10 font-psemibold">
+            Log in 
           </Text>
 
           <FormField
-            title="Email"
-            value={form.email}
-            handleChangeText={(e) => setForm({ ...form, email: e })}
+            title="Username"
+            value={form.username}
+            handleChangeText={(e) => setForm({ ...form, username: e })}
             otherStyles="mt-7"
             keyboardType="email-address"
           />
@@ -70,6 +83,7 @@ const SignIn = () => {
             value={form.password}
             handleChangeText={(e) => setForm({ ...form, password: e })}
             otherStyles="mt-7"
+            secureTextEntry={true}
           />
 
           <CustomButton
@@ -87,7 +101,7 @@ const SignIn = () => {
               href="/sign-up"
               className="text-lg font-psemibold text-secondary"
             >
-              Signup
+              Request Account
             </Link>
           </View>
         </View>

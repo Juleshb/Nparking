@@ -22,11 +22,11 @@ const Welcome = () => {
         }}
       >
         <View className="w-full flex justify-center items-center h-full px-4">
-          <Image
+          {/* <Image
             source={images.logo}
             className="w-[130px] h-[84px]"
             resizeMode="contain"
-          />
+          /> */}
 
           <Image
             source={images.cards}
@@ -38,7 +38,7 @@ const Welcome = () => {
             <Text className="text-3xl text-white font-bold text-center">
               Discover Endless{"\n"}
               Possibilities with{" "}
-              <Text className="text-secondary-200">Aora</Text>
+              <Text className="text-secondary-200">NParking</Text>
             </Text>
 
             <Image
@@ -50,11 +50,11 @@ const Welcome = () => {
 
           <Text className="text-sm font-pregular text-gray-100 mt-7 text-center">
             Where Creativity Meets Innovation: Embark on a Journey of Limitless
-            Exploration with Aora
+            Exploration with NParking
           </Text>
 
           <CustomButton
-            title="Continue with Email"
+            title="Get started"
             handlePress={() => router.push("/sign-in")}
             containerStyles="w-full mt-7"
           />

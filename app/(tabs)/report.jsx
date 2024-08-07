@@ -15,10 +15,10 @@ import {
 import { icons } from "../../constants";
 import { createVideoPost } from "../../lib/appwrite";
 import { CustomButton, SearchInput, FormField } from "../../components";
-// import { useGlobalContext } from "../../context/GlobalProvider";
+import { useGlobalContext } from "../../context/GlobalProvider";
 
 const Create = () => {
-  // const { user } = useGlobalContext();
+  const { user } = useGlobalContext();
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -92,22 +92,21 @@ const Create = () => {
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4 my-6 mt-7">
-        <Text className="text-2xl text-white mb-7 font-psemibold">Vehicle	EXIT</Text>
+        <Text className="text-2xl text-white mb-7 font-psemibold">Report</Text>
 
       
 
-{/* <SearchInput  /> */}
-<FormField
-          title="Plate_no"
+        <FormField
+          title="Start_date"
           value={form.title}
-          placeholder="Plate_no Ex: RAC436J"
+          placeholder="Ex: 2021-12-13"
           handleChangeText={(e) => setForm({ ...form, title: e })}
           otherStyles="mt-10"
         />
          <FormField
-          title="Payment_mode"
+          title="End_date"
           value={form.title}
-          placeholder="Ex: Cash"
+          placeholder="Ex: 2021-12-14"
           handleChangeText={(e) => setForm({ ...form, title: e })}
           otherStyles="mt-10"
         />
@@ -116,7 +115,7 @@ const Create = () => {
 
 
         <CustomButton
-          title="EXIT"
+          title="Generate"
           handlePress={submit}
           containerStyles="mt-7"
           isLoading={uploading}
