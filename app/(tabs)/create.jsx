@@ -59,7 +59,7 @@ const Create = () => {
         `;
 
         Alert.alert("Success", `Car Entry successfully\n\n${messageString}`);
-        router.replace("/home");
+        // router.replace("/home");
       } else {
         Alert.alert("Error", result.message);
       }

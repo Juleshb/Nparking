@@ -1,94 +1,80 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { ResizeMode, Video } from "expo-av";
-import * as DocumentPicker from "expo-document-picker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  View,
-  Text,
-  Alert,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, Alert, ScrollView } from "react-native";
 
-import { icons } from "../../constants";
-import { createVideoPost } from "../../lib/appwrite";
-import { CustomButton, SearchInput, FormField } from "../../components";
-// import { useGlobalContext } from "../../context/GlobalProvider";
+import { CustomButton, FormField } from "../../components";
 
 const Create = () => {
-  // const { user } = useGlobalContext();
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
-    video: null,
-    thumbnail: null,
-    prompt: "",
+    pay: "",
   });
-
-  const openPicker = async (selectType) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type:
-        selectType === "image"
-          ? ["image/png", "image/jpg"]
-          : ["video/mp4", "video/gif"],
-    });
-
-    if (!result.canceled) {
-      if (selectType === "image") {
-        setForm({
-          ...form,
-          thumbnail: result.assets[0],
-        });
-      }
-
-      if (selectType === "video") {
-        setForm({
-          ...form,
-          video: result.assets[0],
-        });
-      }
-    } else {
-      setTimeout(() => {
-        Alert.alert("Document picked", JSON.stringify(result, null, 2));
-      }, 100);
-    }
-  };
 
   const submit = async () => {
     if (
-      (form.prompt === "") |
-      (form.title === "") |
-      !form.thumbnail |
-      !form.video
+      (form.pay === "") |
+      (form.title === "") 
     ) {
       return Alert.alert("Please provide all fields");
     }
-
     setUploading(true);
+
+    const FormData = {
+      plate_no: form.title,
+      payment_mode: form.pay,
+    };
+
     try {
-      await createVideoPost({
-        ...form,
-        userId: user.$id,
+      const token = await AsyncStorage.getItem('authToken');
+
+      const response = await fetch('http://63.142.252.251/sparking/web/index.php/api/v1/ticket/exit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(FormData)
       });
 
-      Alert.alert("Success", "Post uploaded successfully");
-      router.push("/home");
+      const result = await response.json();
+      if (result.success) {
+        const messageData = result.message;
+        const messageString = `
+          ID: ${messageData.id}\n
+          Parking: ${messageData.parking}\n
+          Category: ${messageData.category}\n
+          Vehicle: ${messageData.vehicle}\n
+          Company: ${messageData.company}\n
+          Price: ${messageData.price}\n
+          Price Time: ${messageData.price_time}\n
+          Paid: ${messageData.paid}\n
+          Parking Time: ${messageData.parking_time}\n
+          Exit Time: ${messageData.exit_time}\n
+          Total Time: ${messageData.total_time}\n
+          Currency: ${messageData.currency}\n
+          Created At: ${messageData.created_at}\n
+          Cashier: ${messageData.cashier}\n
+          POS: ${messageData.pos}\n
+          Contact: ${messageData.contact}\n
+          NIF: ${messageData.nif}
+        `;
+
+        Alert.alert("Success", `Car Exit successfully\n\n${messageString}`);
+        // router.replace("/home");
+      } else {
+        Alert.alert("Error", result.message);
+      }
     } catch (error) {
+      console.error("Error details:", error.message);
       Alert.alert("Error", error.message);
     } finally {
-      setForm({
-        title: "",
-        video: null,
-        thumbnail: null,
-        prompt: "",
-      });
-
+      setForm({ title: "" });
       setUploading(false);
     }
   };
-
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4 my-6 mt-7">
@@ -106,9 +92,9 @@ const Create = () => {
         />
          <FormField
           title="Payment_mode"
-          value={form.title}
+          value={form.pay}
           placeholder="Ex: Cash"
-          handleChangeText={(e) => setForm({ ...form, title: e })}
+          handleChangeText={(e) => setForm({ ...form, pay: e })}
           otherStyles="mt-10"
         />
 
