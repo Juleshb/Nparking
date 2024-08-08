@@ -1,94 +1,67 @@
 import { useState } from "react";
 import { router } from "expo-router";
-import { ResizeMode, Video } from "expo-av";
-import * as DocumentPicker from "expo-document-picker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  View,
-  Text,
-  Alert,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, Alert, ScrollView } from "react-native";
 
-import { icons } from "../../constants";
-import { createVideoPost } from "../../lib/appwrite";
-import { CustomButton, SearchInput, FormField } from "../../components";
-import { useGlobalContext } from "../../context/GlobalProvider";
+import { CustomButton, FormField } from "../../components";
 
 const Create = () => {
-  const { user } = useGlobalContext();
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
-    video: null,
-    thumbnail: null,
-    prompt: "",
+    pay: "",
   });
-
-  const openPicker = async (selectType) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type:
-        selectType === "image"
-          ? ["image/png", "image/jpg"]
-          : ["video/mp4", "video/gif"],
-    });
-
-    if (!result.canceled) {
-      if (selectType === "image") {
-        setForm({
-          ...form,
-          thumbnail: result.assets[0],
-        });
-      }
-
-      if (selectType === "video") {
-        setForm({
-          ...form,
-          video: result.assets[0],
-        });
-      }
-    } else {
-      setTimeout(() => {
-        Alert.alert("Document picked", JSON.stringify(result, null, 2));
-      }, 100);
-    }
-  };
 
   const submit = async () => {
     if (
-      (form.prompt === "") |
-      (form.title === "") |
-      !form.thumbnail |
-      !form.video
+      (form.pay === "") |
+      (form.title === "") 
     ) {
       return Alert.alert("Please provide all fields");
     }
-
     setUploading(true);
+
+    const FormData = {
+      from: form.title,
+      to: form.pay,
+    };
+
     try {
-      await createVideoPost({
-        ...form,
-        userId: user.$id,
+      const token = await AsyncStorage.getItem('authToken');
+
+      const response = await fetch('http://63.142.252.251/sparking/web/index.php/api/v1/ticket/cashier-report', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(FormData)
       });
 
-      Alert.alert("Success", "Post uploaded successfully");
-      router.push("/home");
+      const result = await response.json();
+      if (result.success) {
+        const messageData = result.message;
+        const messageString = `
+          TITLE: ${messageData.items}\n
+          TITLE: ${messageData.title}\n
+          TOTAL: ${messageData.total}
+          
+        `;
+
+        Alert.alert("Success", `${messageString}`);
+        // router.replace("/home");
+      } else {
+        Alert.alert("Error", result.message);
+      }
     } catch (error) {
+      console.error("Error details:", error.message);
       Alert.alert("Error", error.message);
     } finally {
-      setForm({
-        title: "",
-        video: null,
-        thumbnail: null,
-        prompt: "",
-      });
-
+      setForm({ title: "" });
       setUploading(false);
     }
   };
-
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4 my-6 mt-7">
@@ -96,18 +69,19 @@ const Create = () => {
 
       
 
-        <FormField
-          title="Start_date"
+{/* <SearchInput  /> */}
+<FormField
+          title="From"
           value={form.title}
-          placeholder="Ex: 2021-12-13"
+          placeholder="yyy-m-d"
           handleChangeText={(e) => setForm({ ...form, title: e })}
           otherStyles="mt-10"
         />
          <FormField
-          title="End_date"
-          value={form.title}
-          placeholder="Ex: 2021-12-14"
-          handleChangeText={(e) => setForm({ ...form, title: e })}
+          title="To"
+          value={form.pay}
+          placeholder="yyy-m-d"
+          handleChangeText={(e) => setForm({ ...form, pay: e })}
           otherStyles="mt-10"
         />
 
@@ -115,7 +89,7 @@ const Create = () => {
 
 
         <CustomButton
-          title="Generate"
+          title="Geneerate"
           handlePress={submit}
           containerStyles="mt-7"
           isLoading={uploading}
